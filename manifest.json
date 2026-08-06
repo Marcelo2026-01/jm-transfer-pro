@@ -2,7 +2,7 @@
   "name": "JM Transfer Pro",
   "short_name": "JM Transfer",
   "description": "Transferência Inteligente de Arquivos por QR Code",
-  "start_url": "./transfer.html",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#030712",
