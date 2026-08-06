@@ -5,8 +5,8 @@
   "start_url": "./transfer.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#f59e0b",
+  "background_color": "#030712",
+  "theme_color": "#111827",
   "orientation": "portrait-primary",
   "icons": [
     {
