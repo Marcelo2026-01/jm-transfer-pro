@@ -6,62 +6,45 @@
     <title>JM Transfer Pro | Transferência Inteligente</title>
     
     <link rel="manifest" href="manifest.json">
-    <!-- Cor da Barra Superior Corrigida -->
     <meta name="theme-color" content="#111827">
     <link rel="apple-touch-icon" href="icone.png">
     <link rel="icon" type="image/png" href="icone.png">
     
-    <!-- Ícones e Fontes Premium -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     
-    <!-- Bibliotecas Externas -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
 
     <style>
-        /* ==========================================
-           DESIGN SYSTEM: JM ENTERPRISE UI (Premium Dark Mode)
-           ========================================== */
         :root {
-            /* Cores de Fundo Refinadas */
             --bg: #030712;
             --surface: #111827;
             --surface-elevated: #1f2937;
             --surface-hover: #374151;
-            
-            /* Cor Âmbar Premium */
             --accent: #F59E0B; 
             --accent-hover: #fbbf24;
             --accent-glow: rgba(245, 158, 11, 0.15);
-            
-            /* Semântica */
             --success: #10B981; 
             --success-bg: rgba(16, 185, 129, 0.1);
             --danger: #E11D48; 
             --danger-bg: rgba(225, 29, 72, 0.1);
             --info: #3B82F6;
-            
-            /* Tipografia e Bordas */
             --text-main: #f3f4f6; 
             --text-muted: #9ca3af; 
             --text-subtle: #4b5563;
             --border: rgba(255, 255, 255, 0.08);
             --border-highlight: rgba(255, 255, 255, 0.15);
-            
-            /* Sombras e Curvas */
             --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.5);
             --shadow-lg: 0 24px 48px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--border);
             --radius-lg: 24px;
             --radius-md: 16px;
             --radius-sm: 8px;
-            
             --transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
@@ -158,7 +141,6 @@
         .btn-login:hover:not(:disabled) { background: #FFFFFF; transform: translateY(-1px); box-shadow: var(--shadow-sm); }
         .btn-login:active:not(:disabled) { transform: translateY(0); }
 
-        /* Nova Caixa do QR Code Premium */
         .qr-box { 
             background: #FFFFFF; padding: 24px; border-radius: var(--radius-lg); 
             display: inline-flex; flex-direction: column; align-items: center; 
@@ -287,15 +269,14 @@
         }
         .footer-branding:hover { color: var(--text-muted); }
         
-        /* Oculta os itens do histórico (mantidos apenas por segurança estrutural) */
         .hist-filter-bar, .history-list { display: none !important; }
     </style>
 </head>
 <body>
     <div id="offlineBanner" class="offline-banner"><i class="fas fa-wifi-slash"></i> Conexão perdida. Modo local ativo.</div>
 
-    <!-- TELA DE LOGIN -->
-    <div id="login-view" class="container" style="display: flex;">
+    <!-- TELA DE LOGIN (Correção FOUC aplicada aqui: estilo inline removido) -->
+    <div id="login-view" class="container">
         <div class="brand-wrapper">
             <div class="brand-text"><span class="brand-jm">JM</span><span class="brand-transfer">TRANSFER</span><span class="brand-badge">PRO</span></div>
         </div>
@@ -306,7 +287,7 @@
         <button class="btn-login" id="btnFazerLogin" onclick="App.login()">Entrar no Sistema</button>
     </div>
 
-    <!-- PAINEL PRINCIPAL (COM QR CODE) -->
+    <!-- PAINEL PRINCIPAL -->
     <div id="pc-view" class="container">
         <div style="position: absolute; top: 24px; left: 24px; right: 24px; display: flex; justify-content: space-between; z-index: 10; pointer-events: none;">
             <div style="display: flex; gap: 12px; pointer-events: auto;">
@@ -328,7 +309,6 @@
             <div class="stat-box"><span class="stat-label">Volume</span><span class="stat-value" id="dash-size">0 MB</span></div>
         </div>
 
-        <!-- A estrutura exata do seu QR Code original, mas com o visual novo! -->
         <div id="qr-container" class="qr-box"><div id="qrcode"></div><p>ESCANEIE PARA ENTRAR NA FILA</p></div>
         
         <button id="btnCopyLink" class="btn-copy-link" onclick="App.copyLink()"><i class="fas fa-link"></i> Copiar Link WhatsApp</button>
@@ -358,7 +338,7 @@
         </div>
     </div>
 
-    <!-- HISTÓRICO (Mantido para não quebrar o script) -->
+    <!-- HISTÓRICO -->
     <div id="history-view" class="container" style="max-width: 800px; display: none;">
         <button class="btn-top-logout" style="left: 24px; right: auto;" onclick="App.hideHistory()"><i class="fas fa-arrow-left"></i> Voltar</button>
         <div class="brand-wrapper" style="transform: scale(0.7); margin-bottom: 0; margin-top: -20px;">
@@ -368,16 +348,13 @@
         <div class="history-list" id="history-list-container"></div>
     </div>
 
-    <!-- TELA DO CLIENTE MOBILE (Onde o problema do texto estava) -->
+    <!-- TELA DO CLIENTE MOBILE -->
     <div id="mobile-view" class="container" style="border: none; box-shadow: none; background: transparent; padding: 24px 16px; display: none;"></div>
     
     <iframe id="printFrame" title="Impressão" style="display: none;"></iframe>
     <div class="footer-branding"><span>Criado por</span><div>José Marcelo dos Santos &copy;</div></div>
     <div class="toast" id="toastMsg"><i class="fas fa-check-circle" style="color: var(--success);"></i> <span></span></div>
 
-    <!-- ==========================================
-         JAVASCRIPT ORIGINAL (INTACTO, COM AJUSTE VISUAL NO MOBILE)
-         ========================================== -->
     <script>
         const AppConfig = {
             chunkSize: 128 * 1024,
@@ -745,7 +722,7 @@
                     AppState.peer.on('open', (id) => {
                         AppState.sessionUrl = `${window.location.href.split('?')[0]}?remote=${id}`;
                         const qrc = document.getElementById("qrcode"); qrc.innerHTML = "";
-                        new QRCode(qrc, { text: AppState.sessionUrl, width: 200, height: 200 }); // Tamanho QR Code aumentado para casar com a nova UI
+                        new QRCode(qrc, { text: AppState.sessionUrl, width: 200, height: 200 });
                     });
                     AppState.peer.on('connection', (c) => {
                         let currentNum, assignedColor;
@@ -876,9 +853,6 @@
                     list.prepend(item);
                     if(type === 'pc') try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(()=>{}); } catch(e){}
                 },
-                // ==========================================
-                // TELA DO MOBILE CLIENTE (CORRIGIDA)
-                // ==========================================
                 renderMobileState: (state) => {
                     const view = document.getElementById('mobile-view');
                     if (state === 'active') {
@@ -969,7 +943,6 @@
             }
         };
 
-        // Bootstrapping
         document.addEventListener('DOMContentLoaded', () => {
             PWAService.init(); 
             
