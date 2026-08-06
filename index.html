@@ -17,9 +17,11 @@
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
+    <!-- Firebase Scripts Atualizados com Storage -->
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-storage-compat.js"></script>
 
     <style>
         :root {
@@ -275,7 +277,7 @@
 <body>
     <div id="offlineBanner" class="offline-banner"><i class="fas fa-wifi-slash"></i> Conexão perdida. Modo local ativo.</div>
 
-    <!-- TELA DE LOGIN (Correção FOUC aplicada aqui: estilo inline removido) -->
+    <!-- TELA DE LOGIN -->
     <div id="login-view" class="container">
         <div class="brand-wrapper">
             <div class="brand-text"><span class="brand-jm">JM</span><span class="brand-transfer">TRANSFER</span><span class="brand-badge">PRO</span></div>
@@ -586,15 +588,46 @@
 
                 try { state.conn.send(payload); } catch(e) { }
 
+                // --- INÍCIO DA INTEGRAÇÃO DO PLANO B (STORAGE) ---
                 clearTimeout(state.timer);
                 state.timer = setTimeout(() => {
                     if (state.retries > 0) {
                         state.retries--; sendChunk(uploadId);
                     } else {
-                        Utils.showToast("Conexão instável. Transferência Abortada.", true);
-                        AppState.activeUploads.delete(uploadId); UIService.hideProgress(state.targetType);
+                        console.warn("WebRTC falhou. Iniciando Plano B (Firebase Storage)...");
+                        UIService.updateBasicProgress(state.targetType, 0, "REDE INSTÁVEL. ENVIANDO VIA NUVEM...");
+                        
+                        const storageRef = firebase.storage().ref('temp_transfers/' + state.fileId + '_' + state.meta.name);
+                        const uploadTask = storageRef.put(state.blob);
+
+                        uploadTask.on('state_changed', 
+                            (snapshot) => {
+                                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                                UIService.updateBasicProgress(state.targetType, progress, "ENVIANDO PELA NUVEM...");
+                            }, 
+                            (error) => {
+                                Utils.showToast("Falha crítica na rede. Impossível enviar.", true);
+                                AppState.activeUploads.delete(uploadId); 
+                                UIService.hideProgress(state.targetType);
+                            }, 
+                            async () => {
+                                const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
+                                // Avisa o Computador (PC) para baixar esse link
+                                state.conn.send({ 
+                                    type: 'fallback_download', 
+                                    url: downloadURL, 
+                                    meta: state.meta, 
+                                    fileId: state.fileId 
+                                });
+                                
+                                Utils.showToast("Enviado via Nuvem com sucesso!");
+                                AppState.activeUploads.delete(uploadId);
+                                setTimeout(() => UIService.hideProgress(state.targetType), 1500);
+                            }
+                        );
                     }
                 }, 3000);
+                // --- FIM DA INTEGRAÇÃO DO PLANO B (STORAGE) ---
             };
 
             const startAckTransfer = async (blob, meta, conn, targetType, fullHash) => {
@@ -702,6 +735,21 @@
                     else if (data.type === 'transfer_complete') {
                         if(type === 'mobile') Utils.showToast("Arquivo recebido com sucesso!");
                     }
+                    // --- RECEBIMENTO DA NUVEM (AUTO-DELETE IMEDIATO) ---
+                    else if (data.type === 'fallback_download') {
+                        Utils.showToast("Conexão direta bloqueada. Recebendo via Nuvem...");
+                        fetch(data.url)
+                            .then(res => res.blob())
+                            .then(blob => {
+                                UIService.renderReceivedFile(blob, data.meta, type, peerId, true);
+                                const fileRef = firebase.storage().refFromURL(data.url);
+                                fileRef.delete().then(() => {
+                                    console.log("Arquivo deletado da nuvem automaticamente.");
+                                }).catch((err) => console.log("Erro ao limpar nuvem:", err));
+                            })
+                            .catch(e => Utils.showToast("Erro ao baixar arquivo da nuvem.", true));
+                    }
+                    // --- FIM RECEBIMENTO NUVEM ---
                     else if (data.type === 'command') {
                         if (data.action === 'setClientInfo' && type === 'mobile') UIService.updateMobileBadge(data);
                         if (data.action === 'disconnect' && type === 'mobile') {
