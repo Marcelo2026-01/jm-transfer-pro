@@ -2,59 +2,146 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- CORREÇÃO 1: A BARRA ESCURA PREMIUM -->
+    <!-- Cor da Barra Superior (Corrigida para Dark Premium) -->
     <meta name="theme-color" content="#111827">
     
-    <title>JM Connect - Balcão Digital</title>
+    <title>JM Transfer Pro | Transferência Inteligente</title>
+    
+    <!-- Link para o Manifest do PWA -->
+    <link rel="manifest" href="manifest.json">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
-        body { 
-            font-family: 'Inter', system-ui, sans-serif; 
-            background-color: #030712; /* Fundo super escuro */
-            color: #ffffff;
-        }
+        body { font-family: 'Inter', system-ui, sans-serif; background-color: #030712; color: #f3f4f6; }
+        .card-dark { background-color: #111827; border: 1px solid #1f2937; }
+        .input-light { background-color: #f1f5f9; color: #0f172a; border: none; }
+        .input-light:focus { outline: 2px solid #F59E0B; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-6 antialiased">
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
 
-    <main class="w-full max-w-sm flex flex-col items-center">
+    <!-- TELA DE LOGIN (Inicial) -->
+    <main id="login-screen" class="w-full max-w-md card-dark rounded-2xl p-8 shadow-2xl flex flex-col items-center">
         
-        <!-- CORREÇÃO 2: ESPAÇAMENTO DO LOGO -->
-        <!-- O flex-col com gap-2 garante que um texto nunca suba em cima do outro -->
-        <div class="flex flex-col items-center gap-1 mb-8 text-center">
-            <h1 class="text-3xl font-extrabold tracking-tight">
-                JM <span class="font-light text-gray-400">CONNECT</span>
+        <!-- Logo -->
+        <div class="flex items-center gap-2 mb-2 mt-4">
+            <h1 class="text-3xl font-extrabold tracking-tight text-white">
+                JM TRANSFER
             </h1>
-            <h2 class="text-sm font-medium tracking-[0.2em] text-gray-500 uppercase mt-1">
-                Balcão Digital
-            </h2>
+            <span class="bg-amber-500 text-black text-xs font-bold px-2 py-1 rounded">PRO</span>
+        </div>
+        <p class="text-sm text-gray-400 font-medium tracking-wide mb-10">Acesso Restrito ao Balcão</p>
+
+        <!-- Formulário -->
+        <form id="login-form" class="w-full space-y-4" onsubmit="entrarNoSistema(event)">
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path></svg>
+                </div>
+                <input type="email" placeholder="E-mail do Administrador" class="input-light w-full pl-12 pr-4 py-3 rounded-xl font-medium" required value="admin@jm.com">
+            </div>
+
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 1-1 1H6v-2H2v-4l4.257-4.257A6 6 0 1118 8zm-6-4a1 1 0 100 2 2 2 0 012 2 1 1 0 102 0 4 4 0 00-4-4z" clip-rule="evenodd"></path></svg>
+                </div>
+                <input type="password" placeholder="Senha" class="input-light w-full pl-12 pr-4 py-3 rounded-xl font-medium" required value="........">
+            </div>
+
+            <button type="submit" class="w-full bg-gray-100 hover:bg-white text-black font-bold py-3 rounded-xl mt-4 transition-colors">
+                Entrar no Sistema
+            </button>
+        </form>
+    </main>
+
+    <!-- TELA DO DASHBOARD (Oculta por padrão) -->
+    <main id="dashboard-screen" class="w-full max-w-4xl card-dark rounded-3xl p-6 shadow-2xl hidden flex-col">
+        
+        <!-- Topo: Histórico e Sair -->
+        <div class="flex justify-between items-center mb-6 text-gray-400 text-sm font-medium">
+            <button class="hover:text-white flex items-center gap-2 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Histórico
+            </button>
+            <button onclick="sairDoSistema()" class="hover:text-white flex items-center gap-2 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                Sair
+            </button>
         </div>
 
-        <!-- Tag do Cliente -->
-        <div class="bg-[#1e293b]/50 border border-[#334155]/50 text-blue-400 rounded-full px-5 py-2.5 flex items-center gap-2 mb-10 shadow-lg">
-            <!-- Ícone de Usuário -->
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
-            </svg>
-            <span class="text-sm font-semibold tracking-wide">VOCÊ É O CLIENTE #1</span>
+        <!-- Logo Central -->
+        <div class="flex flex-col items-center mb-8">
+            <div class="flex items-center gap-2">
+                <h1 class="text-2xl font-extrabold tracking-tight text-white">JM TRANSFER</h1>
+                <span class="bg-amber-500 text-black text-[10px] font-bold px-2 py-0.5 rounded">PRO</span>
+            </div>
+            <p class="text-xs text-gray-400 mt-1">Painel de Controle</p>
         </div>
 
-        <!-- Botão Enviar Arquivos -->
-        <button class="w-full bg-[#111827] hover:bg-[#1f2937] active:scale-95 transition-all duration-200 border border-gray-800 rounded-2xl p-8 flex flex-col items-center justify-center gap-4 shadow-xl">
-            <!-- Ícone de Upload (Âmbar) -->
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-            </svg>
-            <span class="text-base font-medium text-gray-200 tracking-wide uppercase">Enviar Arquivos</span>
-        </button>
+        <!-- Métricas -->
+        <div class="grid grid-cols-4 gap-4 mb-10 border border-gray-800 rounded-xl p-4 bg-[#0a0f1a]">
+            <div class="text-center border-r border-gray-800">
+                <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Atendimentos</p>
+                <p class="text-2xl font-bold text-white">0</p>
+            </div>
+            <div class="text-center border-r border-gray-800">
+                <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Conectados</p>
+                <p class="text-2xl font-bold text-white">0</p>
+            </div>
+            <div class="text-center border-r border-gray-800">
+                <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Arquivos</p>
+                <p class="text-2xl font-bold text-white">0</p>
+            </div>
+            <div class="text-center">
+                <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Volume</p>
+                <p class="text-2xl font-bold text-white">0 <span class="text-sm text-gray-500">MB</span></p>
+            </div>
+        </div>
+
+        <!-- Área do QR Code -->
+        <div class="flex flex-col items-center">
+            <div class="bg-white p-6 rounded-2xl flex flex-col items-center shadow-lg">
+                <!-- Imagem do QR Code (Substitua o src pelo seu script gerador de QR Code real) -->
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://jm-transfer-pro.vercel.app/cliente" alt="QR Code" class="w-48 h-48 mb-4">
+                <p class="text-black text-xs font-bold uppercase tracking-widest">Escaneie para entrar na fila</p>
+            </div>
+            
+            <button class="mt-6 flex items-center gap-2 text-sm text-gray-400 hover:text-white border border-gray-700 hover:border-gray-500 rounded-full px-6 py-2 transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                Copiar Link WhatsApp
+            </button>
+        </div>
 
     </main>
 
+    <!-- Rodapé -->
+    <footer class="mt-12 text-center text-xs text-gray-600 font-medium">
+        Criado por José Marcelo dos Santos ©
+    </footer>
+
+    <!-- SCRIPT DE INTERAÇÃO BÁSICA (Trocar telas) -->
+    <script>
+        function entrarNoSistema(event) {
+            event.preventDefault(); // Evita recarregar a página
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('dashboard-screen').style.display = 'flex';
+        }
+
+        function sairDoSistema() {
+            document.getElementById('dashboard-screen').style.display = 'none';
+            document.getElementById('login-screen').style.display = 'flex';
+        }
+
+        // =========================================================================
+        // ATENÇÃO DESENVOLVEDOR: Cole abaixo a lógica JavaScript original do seu SaaS
+        // (Scripts do WebSocket, Geração real do QR Code, Recebimento de Arquivos, etc)
+        // =========================================================================
+        
+    </script>
 </body>
 </html>
