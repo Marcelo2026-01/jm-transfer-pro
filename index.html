@@ -3,145 +3,987 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <!-- Cor da Barra Superior (Corrigida para Dark Premium) -->
-    <meta name="theme-color" content="#111827">
-    
     <title>JM Transfer Pro | Transferência Inteligente</title>
     
-    <!-- Link para o Manifest do PWA -->
     <link rel="manifest" href="manifest.json">
+    <!-- Cor da Barra Superior Corrigida -->
+    <meta name="theme-color" content="#111827">
+    <link rel="apple-touch-icon" href="icone.png">
+    <link rel="icon" type="image/png" href="icone.png">
     
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Ícones e Fontes Premium -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     
+    <!-- Bibliotecas Externas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
+
     <style>
-        body { font-family: 'Inter', system-ui, sans-serif; background-color: #030712; color: #f3f4f6; }
-        .card-dark { background-color: #111827; border: 1px solid #1f2937; }
-        .input-light { background-color: #f1f5f9; color: #0f172a; border: none; }
-        .input-light:focus { outline: 2px solid #F59E0B; }
+        /* ==========================================
+           DESIGN SYSTEM: JM ENTERPRISE UI (Premium Dark Mode)
+           ========================================== */
+        :root {
+            /* Cores de Fundo Refinadas */
+            --bg: #030712;
+            --surface: #111827;
+            --surface-elevated: #1f2937;
+            --surface-hover: #374151;
+            
+            /* Cor Âmbar Premium */
+            --accent: #F59E0B; 
+            --accent-hover: #fbbf24;
+            --accent-glow: rgba(245, 158, 11, 0.15);
+            
+            /* Semântica */
+            --success: #10B981; 
+            --success-bg: rgba(16, 185, 129, 0.1);
+            --danger: #E11D48; 
+            --danger-bg: rgba(225, 29, 72, 0.1);
+            --info: #3B82F6;
+            
+            /* Tipografia e Bordas */
+            --text-main: #f3f4f6; 
+            --text-muted: #9ca3af; 
+            --text-subtle: #4b5563;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-highlight: rgba(255, 255, 255, 0.15);
+            
+            /* Sombras e Curvas */
+            --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.5);
+            --shadow-lg: 0 24px 48px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--border);
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --radius-sm: 8px;
+            
+            --transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            background: var(--bg); 
+            color: var(--text-main); 
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            padding: 24px; position: relative; overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container { 
+            background: var(--surface); 
+            border: 1px solid var(--border); 
+            border-radius: var(--radius-lg); 
+            padding: 48px 40px; 
+            width: 100%; max-width: 600px; 
+            box-shadow: var(--shadow-lg); 
+            text-align: center; position: relative; 
+            display: none; flex-direction: column; align-items: center; z-index: 2;
+        }
+        
+        .btn-top-logout, .btn-install-app { 
+            position: absolute; top: 24px;
+            background: transparent; border: 1px solid transparent; 
+            color: var(--text-muted); font-size: 13px; font-weight: 500; 
+            padding: 6px 12px; border-radius: var(--radius-sm);
+            cursor: pointer; display: flex; align-items: center; gap: 8px; 
+            transition: var(--transition); z-index: 10;
+        }
+        .btn-top-logout { right: 24px; }
+        .btn-install-app { left: 140px; color: var(--success); display: none; }
+        
+        .btn-top-logout:hover { color: var(--text-main); background: var(--surface-hover); border-color: var(--border); }
+        .btn-install-app:hover { background: var(--success-bg); border-color: rgba(16, 185, 129, 0.3); }
+
+        .offline-banner {
+            position: fixed; top: 0; left: 0; width: 100%; background: var(--danger);
+            color: #fff; text-align: center; padding: 8px; font-size: 12px; font-weight: 600;
+            z-index: 99999; display: none;
+        }
+
+        .brand-wrapper { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 24px; position: relative; z-index: 1;}
+        
+        .brand-text { display: flex; align-items: center; gap: 6px; font-family: 'Inter', sans-serif; }
+        .brand-jm { font-size: 28px; font-weight: 800; color: var(--text-main); letter-spacing: -0.5px; }
+        .brand-transfer { font-size: 28px; font-weight: 500; color: var(--text-muted); letter-spacing: -0.5px; }
+        .brand-badge { 
+            background: var(--accent); color: #000; font-size: 11px; font-weight: 800; 
+            padding: 3px 6px; border-radius: 4px; letter-spacing: 1px; transform: translateY(-8px); 
+        }
+        
+        p.subtitle { 
+            color: var(--text-muted); font-size: 13px; font-weight: 500; 
+            letter-spacing: 0.5px; margin-top: -16px; margin-bottom: 32px; 
+            position: relative; z-index: 1; text-transform: uppercase;
+        }
+
+        .dashboard-panel { 
+            width: 100%; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; 
+            background: var(--border); border: 1px solid var(--border); 
+            border-radius: var(--radius-md); overflow: hidden; margin-bottom: 32px; 
+        }
+        .stat-box { 
+            background: var(--surface); padding: 16px 12px; 
+            display: flex; flex-direction: column; align-items: center; 
+            transition: var(--transition);
+        }
+        .stat-box:hover { background: var(--surface-hover); }
+        .stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 6px;}
+        .stat-value { font-size: 16px; font-weight: 700; color: var(--text-main); font-family: 'JetBrains Mono', monospace; }
+
+        .input-container { position: relative; width: 100%; margin-bottom: 16px; }
+        .input-container i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; z-index: 2; transition: var(--transition); }
+        .input-container input { 
+            width: 100%; background: var(--surface-elevated); border: 1px solid var(--border); 
+            padding: 14px 16px 14px 44px; border-radius: var(--radius-sm); color: var(--text-main); 
+            font-size: 14px; outline: none; transition: var(--transition); 
+        }
+        .input-container input:focus { border-color: var(--accent); background: var(--surface); box-shadow: 0 0 0 1px var(--accent); }
+        .input-container input:focus + i { color: var(--accent); }
+        
+        .btn-login { 
+            background: var(--text-main); color: #000; border: none; padding: 14px; 
+            border-radius: var(--radius-sm); font-weight: 600; font-size: 14px; width: 100%; 
+            cursor: pointer; transition: var(--transition); 
+            display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 8px; 
+            font-family: 'Inter', sans-serif;
+        }
+        .btn-login:hover:not(:disabled) { background: #FFFFFF; transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+        .btn-login:active:not(:disabled) { transform: translateY(0); }
+
+        /* Nova Caixa do QR Code Premium */
+        .qr-box { 
+            background: #FFFFFF; padding: 24px; border-radius: var(--radius-lg); 
+            display: inline-flex; flex-direction: column; align-items: center; 
+            margin-bottom: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .qr-box p { color: #000; font-size: 11px; font-weight: 800; margin-top: 20px; letter-spacing: 1px; text-transform: uppercase;}
+        
+        .btn-copy-link { 
+            background: transparent; color: var(--text-muted); 
+            border: 1px solid var(--border); padding: 8px 16px; border-radius: 20px; 
+            font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; 
+            margin-bottom: 32px; transition: var(--transition); 
+        }
+        .btn-copy-link:hover:not(:disabled) { background: var(--surface-hover); color: var(--text-main); }
+        
+        .status-header { display: flex; gap: 12px; justify-content: center; width: 100%; align-items: center;}
+        #active-clients-list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px; margin-bottom: 24px; width: 100%; }
+        
+        .client-pill { 
+            display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; 
+            border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; color: #fff; 
+            background: var(--surface-hover); border: 1px solid var(--border);
+            animation: fadeIn 0.3s var(--transition); 
+        }
+        .client-pill-close { 
+            cursor: pointer; opacity: 0.5; transition: var(--transition); 
+            display: flex; align-items: center; justify-content: center;
+        }
+        .client-pill-close:hover { opacity: 1; color: var(--danger); }
+        
+        .btn-disconnect { 
+            background: transparent; color: var(--danger); border: 1px solid var(--border); 
+            padding: 8px 16px; border-radius: var(--radius-sm); display: none; align-items: center; gap: 8px; 
+            cursor: pointer; transition: var(--transition); font-size: 12px; font-weight: 500; 
+        }
+        .btn-disconnect:hover { background: var(--danger-bg); border-color: rgba(225, 29, 72, 0.3); }
+
+        .action-area { display: none; flex-direction: column; gap: 16px; width: 100%; position: relative; }
+        .action-area.show { display: flex; animation: fadeIn 0.4s ease; }
+        
+        .drag-zone {
+            border: 1px dashed var(--border-highlight); border-radius: var(--radius-md); padding: 8px; 
+            background: var(--surface-elevated); transition: var(--transition);
+        }
+        .drag-zone.active {
+            border-color: var(--accent); background: var(--accent-glow);
+        }
+
+        .btn-upload { 
+            background: var(--surface); color: var(--text-main); border: 1px solid var(--border); 
+            padding: 24px; border-radius: var(--radius-sm); font-weight: 500; font-size: 14px; 
+            cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; 
+            transition: var(--transition); font-family: 'Inter', sans-serif;
+        }
+        .btn-upload i { font-size: 24px; color: var(--accent); transition: transform 0.2s ease;}
+        .btn-upload:hover:not(:disabled) { background: var(--surface-hover); border-color: var(--border-highlight); }
+        .btn-upload:hover:not(:disabled) i { transform: translateY(-2px); }
+
+        .progress-wrapper { display: none; margin-top: 16px; text-align: left; width: 100%; animation: fadeIn 0.3s ease; }
+        .progress-info { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; font-weight: 600; color: var(--text-main); margin-bottom: 8px; font-family: 'Inter', sans-serif;}
+        .progress-info span:first-child { color: var(--accent); }
+        .progress-info span:last-child { font-family: 'JetBrains Mono', monospace; font-size: 14px; }
+        
+        .progress-container { width: 100%; background: var(--surface-hover); border-radius: 4px; height: 4px; overflow: hidden; }
+        .progress-bar { height: 100%; width: 0%; transition: width 0.15s ease-out; background: var(--accent); position: relative; }
+
+        .progress-telemetry {
+            display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); 
+            margin-top: 8px; font-family: 'JetBrains Mono', monospace;
+        }
+
+        .file-list { 
+            display: flex; flex-direction: column; gap: 8px; margin-top: 16px; 
+            width: 100%; max-height: 300px; overflow-y: auto; padding-right: 4px; 
+        }
+        .file-list::-webkit-scrollbar { width: 4px; }
+        .file-list::-webkit-scrollbar-thumb { background: var(--border-highlight); border-radius: 4px; }
+
+        .file-item { 
+            background: var(--surface); border: 1px solid var(--border); 
+            border-radius: var(--radius-sm); padding: 12px; display: flex; align-items: center; gap: 12px; 
+            width: 100%; transition: var(--transition); text-align: left;
+            animation: fadeIn 0.3s ease; 
+        }
+        .file-item:hover { border-color: var(--border-highlight); background: var(--surface-hover); }
+        
+        .file-preview-box { 
+            width: 40px; height: 40px; border-radius: var(--radius-sm); overflow: hidden; 
+            background: var(--surface-elevated); flex-shrink: 0; display: flex; align-items: center; justify-content: center; 
+            border: 1px solid var(--border); color: var(--text-muted);
+        }
+        .file-preview-img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .file-main-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;}
+        .file-name { font-weight: 500; font-size: 13px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .raio-x-tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center;}
+        .tag { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+        .tag-size { background: var(--surface-hover); color: var(--text-muted); border: 1px solid var(--border);}
+        .tag-verified { background: var(--success-bg); color: var(--success); }
+        .tag-corrupt { background: var(--danger-bg); color: var(--danger); }
+
+        .file-actions { display: flex; gap: 4px; }
+        .btn-act { 
+            width: 32px; height: 32px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; 
+            border: 1px solid transparent; background: transparent; color: var(--text-muted); 
+            cursor: pointer; transition: var(--transition); font-size: 13px;
+        }
+        .btn-act:hover { color: var(--text-main); background: var(--surface-hover); border-color: var(--border); }
+        .btn-act.btn-delete:hover { color: var(--danger); background: var(--danger-bg); border-color: rgba(225, 29, 72, 0.2); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .toast { 
+            position: fixed; bottom: 24px; right: 24px; background: var(--surface-elevated); 
+            border: 1px solid var(--border); border-left: 3px solid var(--accent); 
+            padding: 12px 20px; border-radius: var(--radius-sm); z-index: 10000; display: flex; align-items: center; gap: 12px; 
+            font-weight: 500; font-size: 13px; transform: translateY(150%); box-shadow: var(--shadow-lg);
+            transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
+        }
+        .toast.show { transform: translateY(0); }
+        
+        .footer-branding {
+            position: absolute; bottom: 24px; display: flex; align-items: center; gap: 6px;
+            font-size: 12px; font-weight: 500; color: var(--text-subtle); z-index: 1; transition: var(--transition);
+        }
+        .footer-branding:hover { color: var(--text-muted); }
+        
+        /* Oculta os itens do histórico (mantidos apenas por segurança estrutural) */
+        .hist-filter-bar, .history-list { display: none !important; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-4">
+<body>
+    <div id="offlineBanner" class="offline-banner"><i class="fas fa-wifi-slash"></i> Conexão perdida. Modo local ativo.</div>
 
-    <!-- TELA DE LOGIN (Inicial) -->
-    <main id="login-screen" class="w-full max-w-md card-dark rounded-2xl p-8 shadow-2xl flex flex-col items-center">
+    <!-- TELA DE LOGIN -->
+    <div id="login-view" class="container" style="display: flex;">
+        <div class="brand-wrapper">
+            <div class="brand-text"><span class="brand-jm">JM</span><span class="brand-transfer">TRANSFER</span><span class="brand-badge">PRO</span></div>
+        </div>
+        <p class="subtitle">Acesso Restrito ao Balcão</p>
+
+        <div class="input-container"><i class="fas fa-envelope"></i><input type="email" id="loginEmail" placeholder="E-mail do Administrador"></div>
+        <div class="input-container"><i class="fas fa-key"></i><input type="password" id="loginPass" placeholder="Senha"></div>
+        <button class="btn-login" id="btnFazerLogin" onclick="App.login()">Entrar no Sistema</button>
+    </div>
+
+    <!-- PAINEL PRINCIPAL (COM QR CODE) -->
+    <div id="pc-view" class="container">
+        <div style="position: absolute; top: 24px; left: 24px; right: 24px; display: flex; justify-content: space-between; z-index: 10; pointer-events: none;">
+            <div style="display: flex; gap: 12px; pointer-events: auto;">
+                <button class="btn-top-logout" onclick="App.showHistory()" title="Ver Histórico" style="position: static;"><i class="fas fa-history"></i> Histórico</button>
+                <button id="btnInstallPwa" class="btn-install-app" onclick="PWAService.install()" style="position: static;"><i class="fas fa-download"></i> Instalar App</button>
+            </div>
+            <button class="btn-top-logout" onclick="App.logout()" title="Sair" style="position: static; pointer-events: auto;"><i class="fas fa-sign-out-alt"></i> Sair</button>
+        </div>
+
+        <div class="brand-wrapper" style="transform: scale(0.85); margin-bottom: 16px; margin-top: 24px;">
+            <div class="brand-text"><span class="brand-jm">JM</span><span class="brand-transfer">TRANSFER</span><span class="brand-badge">PRO</span></div>
+        </div>
+        <p class="subtitle" style="margin-bottom: 32px;">Painel de Controle</p>
+
+        <div id="dashboard" class="dashboard-panel">
+            <div class="stat-box"><span class="stat-label">Atendimentos</span><span class="stat-value" id="dash-sessions">0</span></div>
+            <div class="stat-box"><span class="stat-label">Conectados</span><span class="stat-value" id="dash-clients">0</span></div>
+            <div class="stat-box"><span class="stat-label">Arquivos</span><span class="stat-value" id="dash-files">0</span></div>
+            <div class="stat-box"><span class="stat-label">Volume</span><span class="stat-value" id="dash-size">0 MB</span></div>
+        </div>
+
+        <!-- A estrutura exata do seu QR Code original, mas com o visual novo! -->
+        <div id="qr-container" class="qr-box"><div id="qrcode"></div><p>ESCANEIE PARA ENTRAR NA FILA</p></div>
         
-        <!-- Logo -->
-        <div class="flex items-center gap-2 mb-2 mt-4">
-            <h1 class="text-3xl font-extrabold tracking-tight text-white">
-                JM TRANSFER
-            </h1>
-            <span class="bg-amber-500 text-black text-xs font-bold px-2 py-1 rounded">PRO</span>
+        <button id="btnCopyLink" class="btn-copy-link" onclick="App.copyLink()"><i class="fas fa-link"></i> Copiar Link WhatsApp</button>
+
+        <div class="status-header">
+            <button id="pc-disconnect" class="btn-disconnect" onclick="App.endAllSessions()"><i class="fas fa-power-off"></i> Encerrar Fila</button>
         </div>
-        <p class="text-sm text-gray-400 font-medium tracking-wide mb-10">Acesso Restrito ao Balcão</p>
-
-        <!-- Formulário -->
-        <form id="login-form" class="w-full space-y-4" onsubmit="entrarNoSistema(event)">
-            <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <svg class="h-5 w-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path></svg>
-                </div>
-                <input type="email" placeholder="E-mail do Administrador" class="input-light w-full pl-12 pr-4 py-3 rounded-xl font-medium" required value="admin@jm.com">
-            </div>
-
-            <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <svg class="h-5 w-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 1-1 1H6v-2H2v-4l4.257-4.257A6 6 0 1118 8zm-6-4a1 1 0 100 2 2 2 0 012 2 1 1 0 102 0 4 4 0 00-4-4z" clip-rule="evenodd"></path></svg>
-                </div>
-                <input type="password" placeholder="Senha" class="input-light w-full pl-12 pr-4 py-3 rounded-xl font-medium" required value="........">
-            </div>
-
-            <button type="submit" class="w-full bg-gray-100 hover:bg-white text-black font-bold py-3 rounded-xl mt-4 transition-colors">
-                Entrar no Sistema
-            </button>
-        </form>
-    </main>
-
-    <!-- TELA DO DASHBOARD (Oculta por padrão) -->
-    <main id="dashboard-screen" class="w-full max-w-4xl card-dark rounded-3xl p-6 shadow-2xl hidden flex-col">
         
-        <!-- Topo: Histórico e Sair -->
-        <div class="flex justify-between items-center mb-6 text-gray-400 text-sm font-medium">
-            <button class="hover:text-white flex items-center gap-2 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                Histórico
+        <div id="active-clients-list"></div>
+
+        <div id="pc-action" class="action-area drag-zone">
+            <button class="btn-upload" id="pcBtnUpload" onclick="document.getElementById('pcFileInput').click()">
+                <i class="fas fa-cloud-upload-alt"></i> ARRASTE OU CLIQUE PARA ENVIAR
             </button>
-            <button onclick="sairDoSistema()" class="hover:text-white flex items-center gap-2 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                Sair
-            </button>
-        </div>
-
-        <!-- Logo Central -->
-        <div class="flex flex-col items-center mb-8">
-            <div class="flex items-center gap-2">
-                <h1 class="text-2xl font-extrabold tracking-tight text-white">JM TRANSFER</h1>
-                <span class="bg-amber-500 text-black text-[10px] font-bold px-2 py-0.5 rounded">PRO</span>
-            </div>
-            <p class="text-xs text-gray-400 mt-1">Painel de Controle</p>
-        </div>
-
-        <!-- Métricas -->
-        <div class="grid grid-cols-4 gap-4 mb-10 border border-gray-800 rounded-xl p-4 bg-[#0a0f1a]">
-            <div class="text-center border-r border-gray-800">
-                <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Atendimentos</p>
-                <p class="text-2xl font-bold text-white">0</p>
-            </div>
-            <div class="text-center border-r border-gray-800">
-                <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Conectados</p>
-                <p class="text-2xl font-bold text-white">0</p>
-            </div>
-            <div class="text-center border-r border-gray-800">
-                <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Arquivos</p>
-                <p class="text-2xl font-bold text-white">0</p>
-            </div>
-            <div class="text-center">
-                <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Volume</p>
-                <p class="text-2xl font-bold text-white">0 <span class="text-sm text-gray-500">MB</span></p>
-            </div>
-        </div>
-
-        <!-- Área do QR Code -->
-        <div class="flex flex-col items-center">
-            <div class="bg-white p-6 rounded-2xl flex flex-col items-center shadow-lg">
-                <!-- Imagem do QR Code (Substitua o src pelo seu script gerador de QR Code real) -->
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://jm-transfer-pro.vercel.app/cliente" alt="QR Code" class="w-48 h-48 mb-4">
-                <p class="text-black text-xs font-bold uppercase tracking-widest">Escaneie para entrar na fila</p>
-            </div>
+            <input type="file" id="pcFileInput" multiple style="display: none;" onchange="App.handleFileInput(this, 'pc')">
             
-            <button class="mt-6 flex items-center gap-2 text-sm text-gray-400 hover:text-white border border-gray-700 hover:border-gray-500 rounded-full px-6 py-2 transition-all">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
-                Copiar Link WhatsApp
-            </button>
+            <div class="progress-wrapper" id="pc-progress-wrapper">
+                <div class="progress-info"><span id="pc-prog-label">PROCESSANDO...</span> <span id="pc-prog-perc">0%</span></div>
+                <div class="progress-container"><div class="progress-bar" id="pc-progress-bar"></div></div>
+                <div class="progress-telemetry">
+                    <span id="pc-prog-speed">0.00 MB/s</span>
+                    <span id="pc-prog-chunks">0/0 chunks (0%)</span>
+                    <span id="pc-prog-eta"><i class="fas fa-clock"></i> 00:00</span>
+                </div>
+            </div>
+            <div class="file-list" id="pc-file-list"></div>
         </div>
+    </div>
 
-    </main>
+    <!-- HISTÓRICO (Mantido para não quebrar o script) -->
+    <div id="history-view" class="container" style="max-width: 800px; display: none;">
+        <button class="btn-top-logout" style="left: 24px; right: auto;" onclick="App.hideHistory()"><i class="fas fa-arrow-left"></i> Voltar</button>
+        <div class="brand-wrapper" style="transform: scale(0.7); margin-bottom: 0; margin-top: -20px;">
+            <div class="brand-text"><span class="brand-jm">JM</span><span class="brand-transfer">TRANSFER</span><span class="brand-badge">PRO</span></div>
+        </div>
+        <p class="subtitle" style="margin-bottom: 30px;">Auditoria de Transferências</p>
+        <div class="history-list" id="history-list-container"></div>
+    </div>
 
-    <!-- Rodapé -->
-    <footer class="mt-12 text-center text-xs text-gray-600 font-medium">
-        Criado por José Marcelo dos Santos ©
-    </footer>
+    <!-- TELA DO CLIENTE MOBILE (Onde o problema do texto estava) -->
+    <div id="mobile-view" class="container" style="border: none; box-shadow: none; background: transparent; padding: 24px 16px; display: none;"></div>
+    
+    <iframe id="printFrame" title="Impressão" style="display: none;"></iframe>
+    <div class="footer-branding"><span>Criado por</span><div>José Marcelo dos Santos &copy;</div></div>
+    <div class="toast" id="toastMsg"><i class="fas fa-check-circle" style="color: var(--success);"></i> <span></span></div>
 
-    <!-- SCRIPT DE INTERAÇÃO BÁSICA (Trocar telas) -->
+    <!-- ==========================================
+         JAVASCRIPT ORIGINAL (INTACTO, COM AJUSTE VISUAL NO MOBILE)
+         ========================================== -->
     <script>
-        function entrarNoSistema(event) {
-            event.preventDefault(); // Evita recarregar a página
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('dashboard-screen').style.display = 'flex';
-        }
+        const AppConfig = {
+            chunkSize: 128 * 1024,
+            colors: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'],
+            firebase: {
+                apiKey: "AIzaSyCmD4GMmuLbKP0oOP-yu3_m6N1lCUmnljg",
+                authDomain: "jm-transfer.firebaseapp.com",
+                projectId: "jm-transfer",
+                databaseURL: "https://jm-transfer-default-rtdb.firebaseio.com",
+                storageBucket: "jm-transfer.firebasestorage.app",
+                messagingSenderId: "781704866355",
+                appId: "1:781704866355:web:b74476d860bbe91d7f9146"
+            }
+        };
 
-        function sairDoSistema() {
-            document.getElementById('dashboard-screen').style.display = 'none';
-            document.getElementById('login-screen').style.display = 'flex';
-        }
+        const AppState = {
+            isMobile: !!new URLSearchParams(window.location.search).get('remote'),
+            remoteId: new URLSearchParams(window.location.search).get('remote'),
+            peer: null,
+            sessionUrl: "",
+            clients: new Map(), 
+            clientHistory: new Map(),
+            clientCounter: 1,
+            mobileConn: null,
+            isUploading: false,
+            deferredPrompt: null,
+            metrics: { sessions: 0, files: 0, totalSize: 0 },
+            activeUploads: new Map(),
+            fileBuffers: new Map(),
+            completedFiles: new Set()
+        };
 
-        // =========================================================================
-        // ATENÇÃO DESENVOLVEDOR: Cole abaixo a lógica JavaScript original do seu SaaS
-        // (Scripts do WebSocket, Geração real do QR Code, Recebimento de Arquivos, etc)
-        // =========================================================================
-        
+        const Utils = {
+            escapeHTML: (str) => {
+                if (!str) return "";
+                return String(str).replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+            },
+            formatBytes: (bytes) => {
+                if (bytes === 0) return '0 B';
+                const k = 1024; const sizes = ['B', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            },
+            formatTime: (sec) => {
+                if(!isFinite(sec) || sec < 0) return "00:00";
+                const m = Math.floor(sec / 60).toString().padStart(2, '0');
+                const s = Math.floor(sec % 60).toString().padStart(2, '0');
+                return `${m}:${s}`;
+            },
+            showToast: (msg, isError = false) => {
+                const t = document.getElementById('toastMsg'); 
+                const icon = t.querySelector('i');
+                icon.className = isError ? 'fas fa-exclamation-circle' : 'fas fa-check-circle';
+                icon.style.color = isError ? 'var(--danger)' : 'var(--success)';
+                t.style.borderLeftColor = isError ? 'var(--danger)' : 'var(--accent)';
+                t.querySelector('span').innerText = msg;
+                t.classList.add('show'); 
+                setTimeout(() => t.classList.remove('show'), 3500);
+            },
+            generateId: () => Math.random().toString(36).substr(2, 9),
+            calculateHash: async (blob) => {
+                try {
+                    const arrayBuffer = await blob.arrayBuffer();
+                    const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+                    const hashArray = Array.from(new Uint8Array(hashBuffer));
+                    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                } catch (e) {
+                    return "hash_fallback_" + Date.now();
+                }
+            }
+        };
+
+        const PWAService = (() => {
+            const initSW = () => {
+                if ('serviceWorker' in navigator) {
+                    window.addEventListener('load', () => {
+                        const protocol = window.location.protocol;
+                        if (protocol === 'http:' || protocol === 'https:') {
+                            navigator.serviceWorker.register('./sw.js').then(reg => {
+                                reg.addEventListener('updatefound', () => {
+                                    const newWorker = reg.installing;
+                                    newWorker.addEventListener('statechange', () => {
+                                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                            Utils.showToast("Nova atualização instalada! Recarregue a página.");
+                                        }
+                                    });
+                                });
+                            }).catch(err => { });
+                        }
+                    });
+                }
+            };
+
+            const initNetworkMonitor = () => {
+                window.addEventListener('online', () => {
+                    document.getElementById('offlineBanner').style.display = 'none';
+                    Utils.showToast("Conexão restabelecida! Você está online.");
+                    if(!AppState.isMobile && AppState.peer && AppState.peer.disconnected) AppState.peer.reconnect();
+                });
+                
+                window.addEventListener('offline', () => {
+                    document.getElementById('offlineBanner').style.display = 'block';
+                    Utils.showToast("Conexão perdida. Operando em modo offline.", true);
+                });
+            };
+
+            const initInstallPrompt = () => {
+                window.addEventListener('beforeinstallprompt', (e) => {
+                    e.preventDefault();
+                    AppState.deferredPrompt = e;
+                    if (!AppState.isMobile) {
+                        document.getElementById('btnInstallPwa').style.display = 'flex';
+                    }
+                });
+
+                window.addEventListener('appinstalled', () => {
+                    document.getElementById('btnInstallPwa').style.display = 'none';
+                    AppState.deferredPrompt = null;
+                    Utils.showToast("App instalado com sucesso!");
+                });
+            };
+
+            return {
+                init: () => {
+                    initSW();
+                    initNetworkMonitor();
+                    initInstallPrompt();
+                },
+                install: async () => {
+                    if (AppState.deferredPrompt) {
+                        AppState.deferredPrompt.prompt();
+                        const { outcome } = await AppState.deferredPrompt.userChoice;
+                        AppState.deferredPrompt = null;
+                        document.getElementById('btnInstallPwa').style.display = 'none';
+                    }
+                }
+            };
+        })();
+
+        const FirebaseService = (() => {
+            try { firebase.initializeApp(AppConfig.firebase); } catch (e) {}
+            const auth = firebase.auth();
+            let db = null; try { db = firebase.database(); } catch(e){}
+
+            auth.onAuthStateChanged((user) => {
+                if(AppState.isMobile) return;
+                if (user) {
+                    UIService.switchView('login-view', 'pc-view');
+                    if(!AppState.peer) PeerService.initHost();
+                    loadDailyMetrics();
+                } else {
+                    UIService.switchView('pc-view', 'login-view');
+                    if(AppState.peer) { AppState.peer.destroy(); AppState.peer = null; }
+                }
+            });
+
+            const loadDailyMetrics = () => {
+                if(!db) return;
+                const today = new Date().toISOString().split('T')[0];
+                db.ref('metrics/' + today).once('value').then(snap => {
+                    const data = snap.val();
+                    if(data) {
+                        AppState.metrics.sessions = data.sessions || 0;
+                        AppState.metrics.files = data.files || 0;
+                        AppState.metrics.totalSize = data.totalSize || 0;
+                        UIService.updateDashboard();
+                    }
+                }).catch(()=>{});
+            };
+
+            const logSession = (filesCount, sizeBytes) => {
+                AppState.metrics.sessions++; AppState.metrics.files += filesCount; AppState.metrics.totalSize += sizeBytes;
+                UIService.updateDashboard();
+                if(!db || !auth.currentUser) return;
+                const today = new Date().toISOString().split('T')[0];
+                db.ref(`metrics/${auth.currentUser.uid}/` + today).set({
+                    sessions: AppState.metrics.sessions, files: AppState.metrics.files, totalSize: AppState.metrics.totalSize, lastUpdate: Date.now()
+                }).catch(()=>{});
+            };
+
+            const logTransferAudit = (data) => {
+                if(!db || !auth.currentUser) return;
+                const ref = db.ref(`transfers/${auth.currentUser.uid}`).push();
+                ref.set({
+                    ...data, timestamp: firebase.database.ServerValue.TIMESTAMP
+                }).catch(e => console.warn("[Auditoria] Falha ao gravar log", e));
+            };
+
+            return { login: (e, p) => auth.signInWithEmailAndPassword(e, p), logout: () => auth.signOut(), logSession, logTransferAudit };
+        })();
+
+        const TransferEngine = (() => {
+            const workerCode = `
+                importScripts('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+                self.onmessage = async function(e) {
+                    const zip = new JSZip(); e.data.files.forEach(f => zip.file(f.name, f.blob));
+                    try {
+                        const content = await zip.generateAsync({type: "blob"}, (m) => self.postMessage({ type: 'progress', percent: m.percent }));
+                        self.postMessage({ type: 'done', blob: content, id: e.data.id });
+                    } catch(err) { self.postMessage({ type: 'error', error: err.message }); }
+                };
+            `;
+            const workerBlob = new Blob([workerCode], { type: 'application/javascript' }); let worker = null;
+
+            const sendChunk = async (uploadId) => {
+                const state = AppState.activeUploads.get(uploadId);
+                if(!state) return;
+
+                if (state.currentChunk >= state.totalChunks) {
+                    state.conn.send({ type: 'transfer_complete', fileId: state.fileId, hash: state.fullHash });
+                    
+                    const cli = AppState.clients.has(state.conn.peer) ? AppState.clients.get(state.conn.peer) : null;
+                    const duration = (Date.now() - state.startTime) / 1000;
+                    FirebaseService.logTransferAudit({ fileName: state.meta.name, size: state.blob.size, client: cli ? `Cliente #${cli.num}` : 'Móvel', durationSec: duration, status: 'Concluído', sessionId: state.conn.peer });
+                    
+                    AppState.activeUploads.delete(uploadId);
+                    setTimeout(() => UIService.hideProgress(state.targetType), 1500);
+                    return;
+                }
+
+                const start = state.currentChunk * AppConfig.chunkSize;
+                const chunk = state.blob.slice(start, start + AppConfig.chunkSize);
+                const buffer = await chunk.arrayBuffer();
+
+                const payload = {
+                    type: 'chunk', fileId: state.fileId, name: state.meta.name, mime: state.meta.mime,
+                    size: state.blob.size, chunk: buffer, index: state.currentChunk, total: state.totalChunks, hash: state.fullHash
+                };
+
+                try { state.conn.send(payload); } catch(e) { }
+
+                clearTimeout(state.timer);
+                state.timer = setTimeout(() => {
+                    if (state.retries > 0) {
+                        state.retries--; sendChunk(uploadId);
+                    } else {
+                        Utils.showToast("Conexão instável. Transferência Abortada.", true);
+                        AppState.activeUploads.delete(uploadId); UIService.hideProgress(state.targetType);
+                    }
+                }, 3000);
+            };
+
+            const startAckTransfer = async (blob, meta, conn, targetType, fullHash) => {
+                const totalChunks = Math.ceil(blob.size / AppConfig.chunkSize);
+                const fileId = Utils.generateId();
+                const uploadId = fileId + '_' + conn.peer;
+
+                AppState.activeUploads.set(uploadId, {
+                    blob, meta, conn, targetType, fullHash, totalChunks, currentChunk: 0,
+                    confirmedChunks: 0, retries: 3, startTime: Date.now(), fileId, uploadId, timer: null
+                });
+
+                UIService.updateBasicProgress(targetType, 0, "INICIANDO TRANSFERÊNCIA...");
+                sendChunk(uploadId);
+            };
+
+            return {
+                processAndSend: async (filesArray, targetType) => {
+                    UIService.showProgress(targetType, "CRIANDO PACOTE E CALCULANDO HASH...");
+                    
+                    const handleBlob = async (blob, meta) => {
+                        const hash = await Utils.calculateHash(blob);
+                        const conns = targetType === 'pc' 
+                            ? Array.from(AppState.clients.values()).map(c => c.conn).filter(c => c?.open) 
+                            : [AppState.mobileConn].filter(c => c?.open);
+                        
+                        if(conns.length === 0) { Utils.showToast("Sem conexão ativa.", true); UIService.hideProgress(targetType); return; }
+                        
+                        conns.forEach(c => startAckTransfer(blob, meta, c, targetType, hash));
+                        FirebaseService.logSession(filesArray.length, blob.size);
+                    };
+
+                    if (filesArray.length > 1) {
+                        if(!worker) worker = new Worker(URL.createObjectURL(workerBlob));
+                        const safeFiles = filesArray.map(f => ({ name: f.name || 'arq', blob: f }));
+                        
+                        worker.onmessage = (e) => {
+                            if (e.data.type === 'progress') UIService.updateBasicProgress(targetType, e.data.percent, "COMPACTANDO (WORKER)...");
+                            if (e.data.type === 'done') {
+                                UIService.updateBasicProgress(targetType, 0, "INICIANDO PROTOCOLO ACK...");
+                                handleBlob(e.data.blob, { name: `Pacote_${Utils.generateId()}.zip`, mime: 'application/zip' });
+                            }
+                        };
+                        worker.postMessage({ files: safeFiles, id: Utils.generateId() });
+                    } else {
+                        const file = filesArray[0];
+                        handleBlob(file, { name: file.name, mime: file.type });
+                    }
+                },
+                
+                receiveAck: (fileId, peerId, index) => {
+                    const uploadId = fileId + '_' + peerId;
+                    const state = AppState.activeUploads.get(uploadId);
+                    if (!state) return;
+
+                    if (index === state.currentChunk) {
+                        clearTimeout(state.timer);
+                        state.confirmedChunks++; state.currentChunk++; state.retries = 3;
+                        UIService.updateTelemetry(state);
+                        sendChunk(uploadId);
+                    }
+                },
+
+                receiveChunk: async (data, targetType, peerId, conn) => {
+                    conn.send({ type: 'ack', fileId: data.fileId, index: data.index });
+
+                    if (AppState.completedFiles.has(data.fileId)) return;
+
+                    if (!AppState.fileBuffers.has(data.fileId)) {
+                        AppState.fileBuffers.set(data.fileId, { chunks: new Array(data.total), received: 0, meta: data, startTime: Date.now() });
+                    }
+                    const fb = AppState.fileBuffers.get(data.fileId);
+
+                    if (!fb.chunks[data.index]) {
+                        fb.chunks[data.index] = data.chunk; fb.received++;
+                    }
+
+                    if (fb.received === data.total) {
+                        AppState.completedFiles.add(data.fileId);
+                        
+                        const blob = new Blob(fb.chunks, { type: fb.meta.mime || 'application/octet-stream' });
+                        const calcHash = await Utils.calculateHash(blob);
+                        
+                        const isValid = calcHash === data.hash || data.hash.startsWith('hash_fallback');
+
+                        if (targetType === 'pc') {
+                            const cli = AppState.clients.has(peerId) ? AppState.clients.get(peerId) : null;
+                            const duration = (Date.now() - fb.startTime) / 1000;
+                            FirebaseService.logTransferAudit({ fileName: fb.meta.name, size: blob.size, client: cli ? `Cliente #${cli.num}` : 'Desconhecido', durationSec: duration, status: isValid ? 'Concluído' : 'Falhou', sessionId: peerId });
+                        }
+
+                        UIService.renderReceivedFile(blob, fb.meta, targetType, peerId, isValid);
+                        AppState.fileBuffers.delete(data.fileId);
+                    }
+                }
+            };
+        })();
+
+        const PeerService = (() => {
+            const setupConn = (conn, type, peerId) => {
+                conn.on('data', (data) => {
+                    if (!data) return;
+                    if (data.type === 'chunk') TransferEngine.receiveChunk(data, type, peerId, conn);
+                    else if (data.type === 'ack') TransferEngine.receiveAck(data.fileId, peerId, data.index);
+                    else if (data.type === 'transfer_complete') {
+                        if(type === 'mobile') Utils.showToast("Arquivo recebido com sucesso!");
+                    }
+                    else if (data.type === 'command') {
+                        if (data.action === 'setClientInfo' && type === 'mobile') UIService.updateMobileBadge(data);
+                        if (data.action === 'disconnect' && type === 'mobile') {
+                            sessionStorage.setItem('sessao_morta_' + AppState.remoteId, 'true');
+                            UIService.renderMobileState('ended');
+                            setTimeout(() => { try { conn.close(); } catch(e){} }, 500);
+                        }
+                    }
+                });
+                conn.on('close', () => {
+                    if(type === 'pc' && AppState.clients.has(peerId)) { AppState.clients.delete(peerId); UIService.renderActiveClients(); }
+                });
+            };
+
+            return {
+                initHost: () => {
+                    AppState.peer = new Peer(null, { debug: 0 });
+                    AppState.peer.on('open', (id) => {
+                        AppState.sessionUrl = `${window.location.href.split('?')[0]}?remote=${id}`;
+                        const qrc = document.getElementById("qrcode"); qrc.innerHTML = "";
+                        new QRCode(qrc, { text: AppState.sessionUrl, width: 200, height: 200 }); // Tamanho QR Code aumentado para casar com a nova UI
+                    });
+                    AppState.peer.on('connection', (c) => {
+                        let currentNum, assignedColor;
+                        if (AppState.clientHistory.has(c.peer)) {
+                            const hist = AppState.clientHistory.get(c.peer);
+                            currentNum = hist.num; assignedColor = hist.color;
+                            Utils.showToast(`Cliente #${currentNum} reconectou!`);
+                        } else {
+                            currentNum = AppState.clientCounter++;
+                            assignedColor = AppConfig.colors[(currentNum - 1) % AppConfig.colors.length];
+                            AppState.clientHistory.set(c.peer, { num: currentNum, color: assignedColor });
+                            Utils.showToast(`Cliente #${currentNum} conectado!`);
+                        }
+                        
+                        AppState.clients.set(c.peer, { conn: c, num: currentNum, color: assignedColor });
+                        setupConn(c, 'pc', c.peer);
+                        UIService.renderActiveClients();
+
+                        const sendBadge = () => { if (c.open) c.send({ type: 'command', action: 'setClientInfo', num: currentNum, color: assignedColor }); };
+                        if(c.open) sendBadge(); else c.on('open', sendBadge);
+                    });
+                },
+                initClient: () => {
+                    let myId = sessionStorage.getItem('jm_pid_' + AppState.remoteId) || 'cli_' + Utils.generateId();
+                    sessionStorage.setItem('jm_pid_' + AppState.remoteId, myId);
+                    AppState.peer = new Peer(myId, { debug: 0 });
+                    AppState.peer.on('open', () => {
+                        AppState.mobileConn = AppState.peer.connect(AppState.remoteId, { reliable: true });
+                        AppState.mobileConn.on('open', () => setupConn(AppState.mobileConn, 'mobile', AppState.mobileConn.peer));
+                        AppState.mobileConn.on('error', () => Utils.showToast("Falha na conexão", true));
+                    });
+                }
+            };
+        })();
+
+        const UIService = (() => {
+            return {
+                switchView: (hideId, showId) => { document.getElementById(hideId).style.display = 'none'; document.getElementById(showId).style.display = 'flex'; },
+                updateDashboard: () => {
+                    document.getElementById('dash-clients').innerText = AppState.clients.size;
+                    document.getElementById('dash-sessions').innerText = AppState.metrics.sessions;
+                    document.getElementById('dash-files').innerText = AppState.metrics.files;
+                    document.getElementById('dash-size').innerText = Utils.formatBytes(AppState.metrics.totalSize);
+                },
+                renderActiveClients: () => {
+                    const list = document.getElementById('active-clients-list'); list.innerHTML = '';
+                    AppState.clients.forEach((c, peerId) => {
+                        const pill = document.createElement('div'); pill.className = 'client-pill'; pill.style.background = c.color;
+                        pill.innerHTML = `<i class="fas fa-user"></i> CLI #${c.num} <i class="fas fa-times client-pill-close" onclick="App.disconnectClient('${peerId}')"></i>`;
+                        list.appendChild(pill);
+                    });
+                    const hasClients = AppState.clients.size > 0;
+                    document.getElementById('pc-disconnect').style.display = hasClients ? 'inline-flex' : 'none';
+                    document.getElementById('pc-action').classList.toggle('show', hasClients);
+                    if(!hasClients) document.getElementById('pc-file-list').innerHTML = '';
+                    UIService.updateDashboard();
+                },
+                showProgress: (type, label) => {
+                    AppState.isUploading = true;
+                    document.getElementById(`${type}BtnUpload`)?.setAttribute('disabled', 'true');
+                    document.getElementById(`${type}-progress-wrapper`).style.display = 'block';
+                    document.getElementById(`${type}-prog-label`).innerText = label;
+                    document.getElementById(`${type}-progress-bar`).style.width = '0%';
+                },
+                updateBasicProgress: (type, perc, label) => {
+                    document.getElementById(`${type}-progress-bar`).style.width = perc + '%';
+                    document.getElementById(`${type}-prog-perc`).innerText = Math.round(perc) + '%';
+                    if(label) document.getElementById(`${type}-prog-label`).innerText = label;
+                },
+                updateTelemetry: (state) => {
+                    const elapsedSec = (Date.now() - state.startTime) / 1000;
+                    const bytesConfirmed = state.confirmedChunks * AppConfig.chunkSize;
+                    const speedBps = elapsedSec > 0 ? (bytesConfirmed / elapsedSec) : 0;
+                    const speedMbps = (speedBps / (1024 * 1024)).toFixed(2);
+                    const remainingBytes = state.blob.size - bytesConfirmed;
+                    const etaSec = speedBps > 0 ? (remainingBytes / speedBps) : 0;
+                    const perc = Math.round((state.confirmedChunks / state.totalChunks) * 100);
+
+                    document.getElementById(`${state.targetType}-progress-bar`).style.width = perc + '%';
+                    document.getElementById(`${state.targetType}-prog-perc`).innerText = perc + '%';
+                    document.getElementById(`${state.targetType}-prog-label`).innerText = 'TRANSFERINDO (VALIDANDO ACKs)...';
+                    
+                    const elSpeed = document.getElementById(`${state.targetType}-prog-speed`);
+                    const elEta = document.getElementById(`${state.targetType}-prog-eta`);
+                    const elChunks = document.getElementById(`${state.targetType}-prog-chunks`);
+                    
+                    if(elSpeed) elSpeed.innerText = `${speedMbps} MB/s`;
+                    if(elEta) elEta.innerHTML = `<i class="fas fa-clock"></i> ETA: ${Utils.formatTime(etaSec)}`;
+                    if(elChunks) elChunks.innerText = `${state.confirmedChunks}/${state.totalChunks} chunks`;
+                },
+                hideProgress: (type) => {
+                    AppState.isUploading = false;
+                    document.getElementById(`${type}BtnUpload`)?.removeAttribute('disabled');
+                    document.getElementById(`${type}-progress-wrapper`).style.display = 'none';
+                },
+                renderReceivedFile: (blob, meta, type, peerId, isValid) => {
+                    const list = document.getElementById(type === 'pc' ? 'pc-file-list' : 'mobile-file-list');
+                    const fileId = 'file_' + Utils.generateId();
+                    const item = document.createElement('div'); item.className = 'file-item'; item.id = fileId;
+                    
+                    let url; try { url = URL.createObjectURL(blob); } catch(e) { return; }
+                    
+                    let tagCLI = '';
+                    if (type === 'pc' && AppState.clients.has(peerId)) {
+                        const c = AppState.clients.get(peerId);
+                        tagCLI = `<span class="tag" style="background:${c.color}22;color:${c.color};border:1px solid ${c.color}55;">CLI #${c.num}</span>`;
+                    }
+
+                    const tagValid = isValid 
+                        ? `<span class="tag tag-verified" title="Hash SHA-256 verificado!"><i class="fas fa-shield-check"></i> INTEGRO</span>`
+                        : `<span class="tag tag-corrupt" title="Falha de paridade. Não imprima."><i class="fas fa-times-circle"></i> CORROMPIDO</span>`;
+
+                    const safeName = Utils.escapeHTML(meta.name);
+                    const isImg = meta.mime.startsWith('image/');
+                    const isZip = meta.mime === 'application/zip' || meta.name.endsWith('.zip');
+                    
+                    let icon = `<i class="fas fa-file-alt" style="font-size:24px; color:var(--muted)"></i>`;
+                    if(isImg) icon = `<img src="${url}" class="file-preview-img">`;
+                    else if(isZip) icon = `<i class="fas fa-file-archive" style="font-size:24px; color:#f59e0b"></i>`;
+                    else if(meta.name.endsWith('.pdf')) icon = `<i class="fas fa-file-pdf" style="font-size:24px; color:var(--danger)"></i>`;
+
+                    const jsUrl = url.replace(/'/g, "\\'");
+                    const actions = type === 'pc' 
+                        ? `<button class="btn-act" onclick="App.smartPrint('${jsUrl}')"><i class="fas fa-print"></i></button><a href="${url}" download="${safeName}" class="btn-act"><i class="fas fa-download"></i></a><button class="btn-act" onclick="App.deleteFile('${fileId}', '${jsUrl}')"><i class="fas fa-trash-alt"></i></button>`
+                        : `<a href="${url}" download="${safeName}" class="btn-act"><i class="fas fa-download"></i></a><button class="btn-act" onclick="App.deleteFile('${fileId}', '${jsUrl}')"><i class="fas fa-trash-alt"></i></button>`;
+
+                    item.innerHTML = `<div class="file-preview-box">${icon}</div><div class="file-main-info"><span class="file-name">${safeName}</span><div class="raio-x-tags">${tagCLI} <span class="tag tag-size">${Utils.formatBytes(meta.size)}</span> ${tagValid}</div></div><div class="file-actions">${actions}</div>`;
+                    list.prepend(item);
+                    if(type === 'pc') try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(()=>{}); } catch(e){}
+                },
+                // ==========================================
+                // TELA DO MOBILE CLIENTE (CORRIGIDA)
+                // ==========================================
+                renderMobileState: (state) => {
+                    const view = document.getElementById('mobile-view');
+                    if (state === 'active') {
+                        view.innerHTML = `
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; margin-bottom: 24px; text-align: center;">
+                                <h1 style="font-size: 28px; font-weight: 800; letter-spacing: -1px; display: flex; align-items: center; gap: 8px;">
+                                    JM <span style="font-weight: 400; color: #9ca3af;">CONNECT</span>
+                                </h1>
+                                <h2 style="font-size: 12px; font-weight: 600; letter-spacing: 3px; color: #6b7280;">BALCÃO DIGITAL</h2>
+                            </div>
+                            <div class="status-header" style="margin-bottom: 32px;">
+                                <div class="status-badge" id="mobile-client-badge" style="background: rgba(255,255,255,0.05); padding: 12px 24px; border-radius: 30px; font-size:12px; font-weight:700; display:flex; align-items:center; gap:8px;">
+                                    <i class="fas fa-circle-notch fa-spin"></i> CONECTANDO...
+                                </div>
+                            </div>
+                            <div class="action-area show" style="width:100%;">
+                                <button class="btn-upload" id="mobileBtnUpload" onclick="document.getElementById('mobileFileInput').click()"><i class="fas fa-upload"></i> ENVIAR ARQUIVOS</button>
+                                <input type="file" id="mobileFileInput" multiple style="display: none;" onchange="App.handleFileInput(this, 'mobile')">
+                                <div class="progress-wrapper" id="mobile-progress-wrapper">
+                                    <div class="progress-info"><span id="mobile-prog-label">PROCESSANDO...</span> <span id="mobile-prog-perc">0%</span></div>
+                                    <div class="progress-container"><div class="progress-bar" id="mobile-progress-bar"></div></div>
+                                    <div class="progress-telemetry">
+                                        <span id="mobile-prog-speed">0.00 MB/s</span>
+                                        <span id="mobile-prog-chunks">0/0 chunks (0%)</span>
+                                        <span id="mobile-prog-eta"><i class="fas fa-clock"></i> 00:00</span>
+                                    </div>
+                                </div>
+                                <div class="file-list" id="mobile-file-list"></div>
+                            </div>`;
+                    } else {
+                        view.innerHTML = `<div style="padding: 40px 10px; text-align: center;"><i class="fas ${state === 'ended' ? 'fa-check-circle' : 'fa-lock'}" style="font-size: 64px; color: var(--${state === 'ended' ? 'success' : 'muted'}); margin-bottom: 24px;"></i><h1 style="font-size: 24px; margin-bottom: 10px;">${state === 'ended' ? 'Sessão Encerrada' : 'Link Expirado'}</h1><p style="color: var(--muted); font-size: 14px;">Você já pode fechar esta tela.</p></div>`;
+                    }
+                },
+                updateMobileBadge: (data) => {
+                    const b = document.getElementById('mobile-client-badge');
+                    if(b) { b.innerHTML = `<i class="fas fa-user-check"></i> VOCÊ É O CLIENTE #${data.num}`; b.style.background = data.color + '22'; b.style.color = data.color; }
+                },
+                initDragAndDrop: () => {
+                    const zone = document.getElementById('pc-action');
+                    if(!zone) return;
+                    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); }));
+                    ['dragenter', 'dragover'].forEach(ev => zone.addEventListener(ev, () => zone.classList.add('active')));
+                    ['dragleave', 'drop'].forEach(ev => zone.addEventListener(ev, () => zone.classList.remove('active')));
+                    zone.addEventListener('drop', e => { if(!AppState.isUploading && AppState.clients.size > 0) TransferEngine.processAndSend(Array.from(e.dataTransfer.files), 'pc'); });
+                }
+            };
+        })();
+
+        window.App = {
+            login: () => {
+                const btn = document.getElementById('btnFazerLogin'); btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.disabled = true;
+                FirebaseService.login(document.getElementById('loginEmail').value, document.getElementById('loginPass').value)
+                    .catch(() => { Utils.showToast("Erro no login", true); btn.innerHTML = 'Entrar no Sistema'; btn.disabled = false; });
+            },
+            logout: () => { if(confirm("Bloquear sistema?")) FirebaseService.logout(); },
+            copyLink: () => { navigator.clipboard.writeText(AppState.sessionUrl); Utils.showToast("Link copiado!"); },
+            disconnectClient: (id) => {
+                const c = AppState.clients.get(id);
+                if(c?.conn?.open) c.conn.send({ type: 'command', action: 'disconnect' });
+                setTimeout(() => { c?.conn?.close(); AppState.clients.delete(id); UIService.renderActiveClients(); }, 500);
+            },
+            endAllSessions: () => {
+                if(!confirm("Encerrar fila inteira?")) return;
+                AppState.clients.forEach((c) => { if(c.conn?.open) c.conn.send({ type: 'command', action: 'disconnect' }); c.conn?.close(); });
+                AppState.clients.clear(); AppState.clientHistory.clear(); AppState.clientCounter = 1;
+                UIService.renderActiveClients(); Utils.showToast("Fila limpa.");
+            },
+            handleFileInput: (input, type) => {
+                if(AppState.isUploading || !input.files.length) return;
+                TransferEngine.processAndSend(Array.from(input.files), type);
+                input.value = ''; 
+            },
+            deleteFile: (id, url) => {
+                const el = document.getElementById(id);
+                if(el) { el.style.opacity = '0'; setTimeout(() => { el.remove(); URL.revokeObjectURL(url); }, 300); }
+            },
+            smartPrint: (url) => {
+                const f = document.getElementById('printFrame');
+                f.src = url;
+                f.onload = () => { try { f.contentWindow.print(); } catch(e){ Utils.showToast("Erro de impressão. Baixe o arquivo.", true); } };
+            },
+            showHistory: () => {
+                UIService.switchView('pc-view', 'history-view');
+                HistoryService.load();
+            },
+            hideHistory: () => {
+                UIService.switchView('history-view', 'pc-view');
+            }
+        };
+
+        // Bootstrapping
+        document.addEventListener('DOMContentLoaded', () => {
+            PWAService.init(); 
+            
+            if (AppState.isMobile) {
+                document.getElementById('login-view').style.display = 'none';
+                document.getElementById('pc-view').style.display = 'none';
+                
+                document.getElementById('mobile-view').style.display = 'flex';
+                if (sessionStorage.getItem('sessao_morta_' + AppState.remoteId)) UIService.renderMobileState('expired');
+                else { UIService.renderMobileState('active'); PeerService.initClient(); }
+            } else {
+                UIService.initDragAndDrop();
+            }
+        });
     </script>
 </body>
 </html>
